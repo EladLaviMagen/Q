@@ -18,16 +18,23 @@ def get_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     args = get_args()
-    Client.client_socket.connect((args.ip, args.port))
-    Client.client_socket.send((args.name + '-' + args.room_name).encode())
+    client = Client()
+    client.client_socket.connect((args.ip, args.port))
+    client.client_socket.send((args.name + '-' + args.room_name).encode())
     client_input = ""
-    reciever_thread = Thread(target=Client.recieve_messages)
+    reciever_thread = Thread(target=client.recieve_messages, args=(client,))
     reciever_thread.start()
     while not client_input.startswith(COMMAND + EXIT):
         client_input = ""
-        client_input = input()
+        client.output_lock.acquire()
+        client_input = readInput(INPUT_TIMEOUT)
+        client.output_lock.release()
         if client_input != "":
-            Client.client_socket.send(client_input.encode())
-    Client.client_socket.close()
+            client.client_socket.send(client_input.encode())
+    client.client_socket.close()
+
+
+if __name__ == "__main__":
+    main()
