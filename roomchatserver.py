@@ -9,12 +9,17 @@ MAX_MESSAGE_SIZE = 1024
 NAME = 0
 ROOM = 1
 EXIT = "/exit"
+KICK = "/kick"
+KICKED_USER = 1
 TRANSFER = "/transfer"
 NOTIFY_ROOM_MESSAGE = "has entered the room"
 TIMEOUT = 10
 TRANSFER_ERROR_BAD_USAGE = "ERROR : TRANSFER REQUEST WAS NOT PROPER\nUsage : /transfer <room name>\n"
 TRANSFER_ERROR_ADMIN = "ERROR : ADMIN CANNOT TRANSFER\n"
 TRANSFER_ERROR_UNAUTHORIZED = "Unauthorized entry attempt, only admins in the ADMIN room\n"
+KICK_ERROR_BAD_USAGE = "ERROR : KICK REQUEST WAS NOT PROPER\nUsage : /kick <user name>\n"
+KICK_ERROR_KICK_SELF = """ERROR : YOU ARE ATTEMPTING TO KICK YOURSELF, PLEASE USE "/exit" INSTEAD\n"""
+KICK_ERROR_USER_NOT_FOUND = "ERROR : THE USER YOU ARE ATTEMPTING TO KICK IS NOT IN THIS ROOM\n"
 ADMIN = "ADMIN"
 
 
@@ -99,17 +104,40 @@ Also sends back error message to user if he sent invalid message
 """
 def is_valid(sender_socket, sent_message):
     if sent_message.startswith(TRANSFER):
-        if sockets_info[sender_socket][ROOM] == ADMIN:
-            sender_socket.send(TRANSFER_ERROR_ADMIN.encode())
-            return False
-        sent_message = sent_message.split(' ')
-        if len(sent_message) != 2:
-            sender_socket.send(TRANSFER_ERROR_BAD_USAGE.encode())
-            return False
-        if sent_message[ROOM] == ADMIN:
-            sender_socket.send(TRANSFER_ERROR_UNAUTHORIZED.encode())
-            return False
+        return validate_transfer(sender_socket, sent_message)
+    if sent_message.startswith(KICK):
+        return validate_kick(sender_socket, sent_message)
     return True
+
+
+def validate_transfer(sender_socket, transfer_request):
+    if sockets_info[sender_socket][ROOM] == ADMIN:
+        sender_socket.send(TRANSFER_ERROR_ADMIN.encode())
+        return False
+    transfer_request = transfer_request.split(' ')
+    if len(transfer_request) != 2:
+        sender_socket.send(TRANSFER_ERROR_BAD_USAGE.encode())
+        return False
+    if transfer_request[ROOM] == ADMIN:
+        sender_socket.send(TRANSFER_ERROR_UNAUTHORIZED.encode())
+        return False
+    return True
+
+
+def validate_kick(sender_socket, kick_request):
+    kick_request = kick_request.split(' ')
+    if len(kick_request) != 2:
+        sender_socket.send(KICK_ERROR_BAD_USAGE.encode())
+        return False
+    kicked_user = kick_request[KICKED_USER]
+    if kicked_user == sockets_info[sender_socket]:
+        sender_socket.send(KICK_ERROR_BAD_USAGE.encode())
+        return False
+    for client_socket in rooms[sockets_info[sender_socket][ROOM]]:
+        if sockets_info[client_socket][NAME] == kicked_user:
+            return True
+    sender_socket.send(KICK_ERROR_USER_NOT_FOUND.encode())
+    return False
 
 
 rooms = defaultdict(list)
