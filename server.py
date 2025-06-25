@@ -90,3 +90,40 @@ class Server:
             Server.handle_message(transferred_socket, NOTIFY_ROOM_MESSAGE_ENTRY)
         else:
             transferred_socket.send(TRANSFER_ERROR_MESSAGES[result.value].encode())
+
+    """
+    Validates transfer request
+    @Param transferred_socket - The socket of the user that is transferring Server._rooms
+    @param transfer_request - Parameters of request
+    @Return - Result code for transfer request
+    """
+    @staticmethod
+    def _validate_kick(sender_socket, kick_request):
+        if len(kick_request) != 2:
+            return CommonReturnCodes.BAD_USAGE
+        kicked_user = kick_request[KICKED_USER]
+        if kicked_user == Server.sockets_info[sender_socket]:
+            return KickReturnCodes.KICK_SELF_CODE
+        for client_socket in Server._rooms[Server._sockets_info[sender_socket][ROOM]]:
+            if Server._sockets_info[client_socket][NAME] == kicked_user:
+                return CommonReturnCodes.VALID
+        return KickReturnCodes.USER_NOT_FOUND_CODE
+
+    """
+    Handles user room transfer
+    @Param transferred_socket - The socket of the user that is transferring Server._rooms
+    @param transfer_request - Parameters of request
+    """
+    @staticmethod
+    def handle_kick(transferred_socket, kick_request):
+        # Updating Server._rooms and client information
+        result = Server._validate_kick(transferred_socket, kick_request)
+        if result == CommonReturnCodes.VALID:
+            Server.handle_message(transferred_socket, NOTIFY_ROOM_MESSAGE_LEAVING)
+            Server._rooms[Server._sockets_info[transferred_socket][ROOM]].remove(transferred_socket)
+            Server._sockets_info[transferred_socket][ROOM] = transfer_request[ROOM]
+            Server._rooms[transfer_request[ROOM]].append(transferred_socket)
+            # Sending a message to the new room that client has joined
+            Server.handle_message(transferred_socket, NOTIFY_ROOM_MESSAGE_ENTRY)
+        else:
+            transferred_socket.send(TRANSFER_ERROR_MESSAGES[result.value].encode())
