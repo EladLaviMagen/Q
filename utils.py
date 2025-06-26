@@ -1,0 +1,28 @@
+from enum import Enum
+
+
+ADDRESS = "127.0.0.1"
+MAX_USERS = 10
+MAX_MESSAGE_SIZE = 1024
+NAME = 0
+ROOM = 1
+EXIT = "exit"
+TRANSFER = "transfer"
+NOTIFY_ROOM_MESSAGE_ENTRY = "has entered the room"
+NOTIFY_ROOM_MESSAGE_LEAVING = "transferred to a different room"
+NOTIFY_LEAVE_MESSAGE = "left"
+TIMEOUT = 10
+TRANSFER_ERROR_MESSAGES = ["TRANSFER REQUEST WAS NOT PROPER - Usage : /transfer <room name>\n",
+                           "ADMIN CANNOT TRANSFER\n",
+                           "UNAUTHORIZED ENTRY ATTEMPT TO ADMIN ROOM, ONLY ADMINS IN ADMIN ROOM\n"]
+UNKNOWN_COMMAND_ERROR = "UNKNOWN COMMAND ATTEMPTED\n"
+ADMIN = "ADMIN"
+COMMAND = '/'
+COMMAND_IDENTIFIER = 0
+
+
+class TransferReturnCodes(Enum):
+    VALID = -1
+    BAD_USAGE_CODE = 0
+    ADMIN_TRANSFER_CODE = 1
+    UNAUTHORIZED_ENTRY_CODE = 2
