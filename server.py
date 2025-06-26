@@ -81,11 +81,12 @@ class Server:
     def handle_transfer(transferred_socket, transfer_request):
         # Updating Server._rooms and client information
         result = Server._validate_transfer(transferred_socket, transfer_request)
+        room = transfer_request[ROOM]
         if result == TransferReturnCodes.VALID:
             Server.handle_message(transferred_socket, NOTIFY_ROOM_MESSAGE_LEAVING)
-            Server._rooms[Server._sockets_info[transferred_socket][ROOM]].remove(transferred_socket)
-            Server._sockets_info[transferred_socket][ROOM] = transfer_request[ROOM]
-            Server._rooms[transfer_request[ROOM]].append(transferred_socket)
+            Server._rooms[Server._sockets_info[room]].remove(transferred_socket)
+            Server._sockets_info[transferred_socket][ROOM] = room
+            Server._rooms[room].append(transferred_socket)
             # Sending a message to the new room that client has joined
             Server.handle_message(transferred_socket, NOTIFY_ROOM_MESSAGE_ENTRY)
         else:

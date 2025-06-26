@@ -20,6 +20,7 @@ ADMIN = "ADMIN"
 COMMAND = '/'
 COMMAND_IDENTIFIER = 0
 
+
 class TransferReturnCodes(Enum):
     VALID = -1
     BAD_USAGE_CODE = 0
